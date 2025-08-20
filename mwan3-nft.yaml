@@ -1,0 +1,48 @@
+# 配置文件示例
+
+# 全局配置
+global:
+  policy: "auto_select"
+  udp-race: true
+  mptcp: true
+  tfo: false
+  health-check:
+    timeout: 3
+    interval: 10
+    url: https://www.qq.com/favicon.ico
+    fail-threshold: 3 # 连续失败次数超过该值时，将接口标记为下线
+    succ-threshold: 2 # 连续成功次数超过该值时，将接口标记为上线
+
+# 接口配置
+interfaces:
+  - name: "wan1"
+    interface-name: "pppoe-cmcc"
+    weight: 10
+    mark: 1
+    enabled: true
+    nftables-sets: ["cmcc_cidr4", "cmcc_cidr6"]
+
+  - name: "wan2"
+    interface-name: "pppoe-cnc"
+    weight: 8
+    mark: 2
+    enabled: true
+    nftables-sets: ["cnc_cidr4", "cnc_cidr6"]
+
+  - name: "wan3"
+    interface-name: "pppoe-ct"
+    weight: 5
+    mark: 3
+    enabled: true
+    nftables-sets: ["ct_cidr4", "ct_cidr6"]
+
+# 策略配置
+policies:
+  - type: "url-test"
+    interfaces: ["wan1", "wan2", "wan3"] # 选择延迟最低的
+
+  - type: "load-balance"
+    interfaces: ["wan1", "wan2", "wan3"] # 轮询
+
+  - type: "fallback"
+    interfaces: ["wan2", "wan1", "wan3"] # 故障转移，优先级从高到低
