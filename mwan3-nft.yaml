@@ -1,27 +1,27 @@
-# 配置文件示例
-
 # 全局配置
 global:
-  policy: "auto_select"
-  udp-race: true
-  mptcp: true
-  tfo: false
+  policy: "load-balance"         # 默认策略: url-test, load-balance, fallback
+  udp-race: true                 # 启用UDP竞速优化
+  mptcp: true                    # 启用多路径TCP
+  tfo: false                     # 启用TCP Fast Open
   health-check:
-    timeout: 3
-    interval: 10
-    url: https://www.qq.com/favicon.ico
-    fail-threshold: 3 # 连续失败次数超过该值时，将接口标记为下线
-    succ-threshold: 2 # 连续成功次数超过该值时，将接口标记为上线
+    timeout: 3                   # 健康检测超时时间(秒)
+    interval: 10                 # 健康检测间隔(秒)
+    url: https://www.qq.com/favicon.ico  # 健康检测URL
+    fail-threshold: 3            # 连续失败次数阈值
+    succ-threshold: 2            # 连续成功次数阈值
 
 # 接口配置
 interfaces:
+  # 中国移动宽带
   - name: "wan1"
-    interface-name: "pppoe-cmcc"
-    weight: 10
-    mark: 1
-    enabled: true
-    nftables-sets: ["cmcc_cidr4", "cmcc_cidr6"]
+    interface-name: "pppoe-cmcc"  # 系统接口名
+    weight: 10                    # 带宽权重(用于负载均衡)
+    mark: 1                       # 流量标记
+    enabled: true                 # 是否启用
+    nftables-sets: ["cmcc_cidr4", "cmcc_cidr6"]  # nftables集合
 
+  # 中国联通宽带
   - name: "wan2"
     interface-name: "pppoe-cnc"
     weight: 8
@@ -29,6 +29,7 @@ interfaces:
     enabled: true
     nftables-sets: ["cnc_cidr4", "cnc_cidr6"]
 
+  # 中国电信宽带
   - name: "wan3"
     interface-name: "pppoe-ct"
     weight: 5
@@ -38,11 +39,14 @@ interfaces:
 
 # 策略配置
 policies:
+  # 自动选择策略 - 选择延迟最低的接口
   - type: "url-test"
-    interfaces: ["wan1", "wan2", "wan3"] # 选择延迟最低的
+    interfaces: ["wan1", "wan2", "wan3"]
 
+  # 负载均衡策略 - 按权重轮询分配
   - type: "load-balance"
-    interfaces: ["wan1", "wan2", "wan3"] # 轮询
+    interfaces: ["wan1", "wan2", "wan3"]
 
+  # 故障转移策略 - 按优先级使用
   - type: "fallback"
-    interfaces: ["wan2", "wan1", "wan3"] # 故障转移，优先级从高到低
+    interfaces: ["wan2", "wan1", "wan3"]  # 故障转移，优先级从高到低
